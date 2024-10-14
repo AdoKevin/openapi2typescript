@@ -2,9 +2,9 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-lonely-if */
 /* eslint-disable no-param-reassign */
-import path from 'path';
 import fs from 'fs';
 import { camelCase, upperFirst } from 'lodash';
+import path from 'path';
 
 export const getAbsolutePath = (filePath: string) => {
   if (filePath && !path.isAbsolute(filePath)) {
@@ -20,13 +20,13 @@ export const mkdir = (dir: string) => {
   }
 };
 
-export const prettierFile = (content: string): [string, boolean] => {
+export const prettierFile = async (content: string): Promise<[string, boolean]> => {
   let result = content;
   let hasError = false;
   try {
-    const prettier = require('prettier');
+    const prettier = await import('prettier');
 
-    const prettierOptions = prettier.resolveConfig.sync(process.cwd());
+    const prettierOptions = await prettier.resolveConfig(process.cwd());
     result = prettier.format(content, {
       parser: 'typescript',
       ...prettierOptions,
@@ -37,10 +37,10 @@ export const prettierFile = (content: string): [string, boolean] => {
   return [result, hasError];
 };
 
-export const writeFile = (folderPath: string, fileName: string, content: string) => {
+export const writeFile = async (folderPath: string, fileName: string, content: string) => {
   const filePath = path.join(folderPath, fileName);
   mkdir(path.dirname(filePath));
-  const [prettierContent, hasError] = prettierFile(content);
+  const [prettierContent, hasError] = await prettierFile(content);
   fs.writeFileSync(filePath, prettierContent, {
     encoding: 'utf8',
   });

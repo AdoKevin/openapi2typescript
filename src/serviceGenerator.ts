@@ -316,8 +316,7 @@ class ServiceGenerator {
       ...config,
     };
     if (this.config.hook?.afterOpenApiDataInited) {
-      this.openAPIData =
-        this.config.hook.afterOpenApiDataInited(openAPIData) || openAPIData;
+      this.openAPIData = this.config.hook.afterOpenApiDataInited(openAPIData) || openAPIData;
     } else {
       this.openAPIData = openAPIData;
     }
@@ -354,10 +353,9 @@ class ServiceGenerator {
         });
       });
     });
-    
   }
 
-  public genFile() {
+  public async genFile() {
     const basePath = this.config.serversPath || './src/service';
     try {
       const finalPath = join(basePath, this.config.projectName);
@@ -373,7 +371,7 @@ class ServiceGenerator {
       Log(`🚥 serves 生成失败: ${error}`);
     }
     // 生成 ts 类型声明
-    this.genFileFromTemplate('typings.d.ts', 'interface', {
+    await this.genFileFromTemplate('typings.d.ts', 'interface', {
       namespace: this.config.namespace,
       nullable: this.config.nullable,
       // namespace: 'API',
@@ -383,10 +381,10 @@ class ServiceGenerator {
     // 生成 controller 文件
     const prettierError = [];
     // 生成 service 统计
-    this.getServiceTP().forEach((tp) => {
+    const tasks = this.getServiceTP().map(async (tp) => {
       // 根据当前数据源类型选择恰当的 controller 模版
       const template = 'serviceController';
-      const hasError = this.genFileFromTemplate(
+      const hasError = await this.genFileFromTemplate(
         this.getFinalFileName(`${tp.className}.ts`),
         template,
         {
@@ -400,11 +398,13 @@ class ServiceGenerator {
       prettierError.push(hasError);
     });
 
+    await Promise.all(tasks);
+
     if (prettierError.includes(true)) {
       Log(`🚥 格式化失败，请检查 service 文件内可能存在的语法错误`);
     }
     // 生成 index 文件
-    this.genFileFromTemplate(`index.ts`, 'serviceIndex', {
+    await this.genFileFromTemplate(`index.ts`, 'serviceIndex', {
       list: this.classNameList,
       disableTypeCheck: false,
     });
@@ -889,18 +889,18 @@ class ServiceGenerator {
     );
   }
 
-  private genFileFromTemplate(
+  private async genFileFromTemplate(
     fileName: string,
     type: TypescriptFileType,
     params: Record<string, any>,
-  ): boolean {
+  ): Promise<boolean> {
     try {
       const template = this.getTemplate(type);
       // 设置输出不转义
       nunjucks.configure({
         autoescape: false,
       });
-      return writeFile(this.finalPath, fileName, nunjucks.renderString(template, params));
+      return await writeFile(this.finalPath, fileName, nunjucks.renderString(template, params));
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('[GenSDK] file gen fail:', fileName, 'type:', type);

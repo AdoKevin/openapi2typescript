@@ -62,7 +62,7 @@ export type GenerateServiceProps = {
     /** 自定义类型名称 */
     customTypeName?: (data: APIDataType) => string;
     /** 自定义 options 默认值 */
-    customOptionsDefaultValue?: (data: OperationObject) =>  Record<string, any> | undefined;
+    customOptionsDefaultValue?: (data: OperationObject) => Record<string, any> | undefined;
     /** 自定义类名 */
     customClassName?: (tagName: string) => string;
 
@@ -218,7 +218,7 @@ export const generateService = async ({
     },
     openAPI,
   );
-  serviceGenerator.genFile();
+  await serviceGenerator.genFile();
 
   if (mockFolder) {
     await mockGenerator({
